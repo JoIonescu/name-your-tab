@@ -1,7 +1,8 @@
+console.log("content script loaded on:", location.href);
+
 function updateTitle(tabIndex) {
-  if (typeof tabIndex === "undefined") {
-    return;
-  }
+  console.log("updateTitle called with index:", tabIndex);
+  if (typeof tabIndex === "undefined") return;
   if (typeof window.lastTitle === "undefined" || document.title != window.lastTitle) {
     window.originalTitle = document.title;
     setTitle(document.title, tabIndex);
@@ -14,21 +15,23 @@ function setTitle(title, tabIndex) {
   document.title = prefix + title + ' <' + location.host + '>';
   window.lastTitle = document.title;
   window.lastTabIndex = tabIndex;
+  console.log("title set to:", document.title);
 }
 function registerListener() {
-  chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-      updateTitle(request.tabIndex);
-    });
-  var titleObserver = new MutationObserver(function(mutations) {
-    updateTitle(window.lastTabIndex);
+  console.log("registerListener called");
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    console.log("message received:", request);
+    updateTitle(request.tabIndex);
   });
-  var config = { attributes: true, childList: true, characterData: true };
   var titleEl = document.getElementsByTagName('title')[0];
   if (titleEl) {
-    titleObserver.observe(titleEl, config);
+    var titleObserver = new MutationObserver(function() {
+      updateTitle(window.lastTabIndex);
+    });
+    titleObserver.observe(titleEl, { attributes: true, childList: true, characterData: true });
   }
 }
 document.addEventListener("DOMContentLoaded", function(event) {
+  console.log("DOMContentLoaded fired");
   registerListener();
 });

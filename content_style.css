@@ -1,0 +1,100 @@
+#tab-namer-tooltip {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 20, 0.85);
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 999999;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+}
+#tab-namer-tooltip.visible {
+  opacity: 1;
+}
+
+#tab-namer-rename {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 20px 24px;
+  z-index: 9999999;
+  font-family: system-ui, sans-serif;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 280px;
+}
+#tab-namer-rename.visible {
+  display: flex;
+}
+#tab-namer-rename label {
+  font-size: 12px;
+  color: #aaa;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+#tab-namer-rename input {
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 15px;
+  padding: 8px 12px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+#tab-namer-rename input:focus {
+  border-color: #888;
+}
+#tab-namer-rename .actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+#tab-namer-rename button {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+#tab-namer-rename .btn-confirm {
+  background: #fff;
+  color: #111;
+  font-weight: 600;
+}
+#tab-namer-rename .btn-cancel {
+  background: #333;
+  color: #ccc;
+}
+#tab-namer-rename .btn-reset {
+  background: transparent;
+  color: #666;
+  margin-right: auto;
+  padding-left: 0;
+}
+#tab-namer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999998;
+  display: none;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(2px);
+}
+#tab-namer-overlay.visible {
+  display: block;
+}

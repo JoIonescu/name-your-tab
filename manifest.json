@@ -1,9 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Tab Namer",
-  "version": "2.0",
-  "description": "Shows hostname on hover. Double-click any tab to rename it.",
-  "permissions": ["tabs", "storage"],
+  "version": "3.0",
+  "description": "Rename tabs and assign colors from the extension popup.",
+  "permissions": ["tabs", "storage", "tabGroups"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
   "background": {
     "service_worker": "service_worker.js"
   },
@@ -11,7 +15,6 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content_script.js"],
-      "css": ["content_style.css"],
       "run_at": "document_end"
     }
   ]

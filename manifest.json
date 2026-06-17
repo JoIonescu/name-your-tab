@@ -5,8 +5,7 @@
   "description": "Rename tabs and assign colors from the extension popup.",
   "permissions": ["tabs", "storage", "tabGroups"],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_popup": "popup.html"
   },
   "background": {
     "service_worker": "service_worker.js"

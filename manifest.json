@@ -3,6 +3,7 @@
   "name": "Tab Namer",
   "version": "1.3",
   "description": "Renames tabs to: \"<index> <original_name> <hostname>\".",
+  "permissions": ["tabs"],
   "background": {
     "service_worker": "service_worker.js"
   },
@@ -12,6 +13,5 @@
       "js": ["content_script.js"],
       "run_at": "document_start"
     }
-  ],
-  "content_security_policy": {}
+  ]
 }

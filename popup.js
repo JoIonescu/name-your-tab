@@ -1,13 +1,13 @@
 const COLORS = [
-  { label: "None",    value: null,      hex: "#333" },
-  { label: "Red",     value: "red",     hex: "#eb5757" },
-  { label: "Orange",  value: "orange",  hex: "#f0a500" },
-  { label: "Yellow",  value: "yellow",  hex: "#f5e642" },
-  { label: "Green",   value: "green",   hex: "#4caf7d" },
-  { label: "Cyan",    value: "cyan",    hex: "#56ccf2" },
-  { label: "Blue",    value: "blue",    hex: "#2f80ed" },
-  { label: "Purple",  value: "purple",  hex: "#9b51e0" },
-  { label: "Pink",    value: "pink",    hex: "#eb57a0" },
+  { label: "None",   value: null,      hex: "#333333" },
+  { label: "Red",    value: "#eb5757", hex: "#eb5757" },
+  { label: "Orange", value: "#f0a500", hex: "#f0a500" },
+  { label: "Yellow", value: "#f5e642", hex: "#f5e642" },
+  { label: "Green",  value: "#4caf7d", hex: "#4caf7d" },
+  { label: "Cyan",   value: "#56ccf2", hex: "#56ccf2" },
+  { label: "Blue",   value: "#2f80ed", hex: "#2f80ed" },
+  { label: "Purple", value: "#9b51e0", hex: "#9b51e0" },
+  { label: "Pink",   value: "#eb57a0", hex: "#eb57a0" },
 ];
 
 let currentTab = null;
@@ -37,7 +37,7 @@ COLORS.forEach(({ label, value, hex }) => {
   colorPicker.appendChild(swatch);
 });
 
-// Load current tab data
+// Load current tab
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   currentTab = tabs[0];
   if (!currentTab) return;
@@ -60,11 +60,10 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (match) {
         headerDot.style.background = match.hex;
         document.querySelectorAll(".color-swatch").forEach(s => {
-          if (s.dataset.value === (saved.color ?? "")) s.classList.add("selected");
+          if (s.dataset.value === saved.color) s.classList.add("selected");
         });
       }
     } else {
-      // Select "None" by default
       colorPicker.firstChild?.classList.add("selected");
     }
   });
@@ -79,23 +78,28 @@ btnApply.addEventListener("click", () => {
     [String(currentTab.id)]: { name, color: selectedColor }
   });
 
-  // Rename the tab title
-  if (name) {
-    chrome.tabs.sendMessage(currentTab.id, { type: "apply", name }).catch(() => {});
-  }
-
-  // Color via tab group
-  if (selectedColor) {
-    chrome.tabs.group({ tabIds: [currentTab.id] }, (groupId) => {
-      if (chrome.runtime.lastError) return;
-      chrome.tabGroups.update(groupId, { color: selectedColor }).catch(() => {});
-    });
-  } else {
-    // Ungroup if color is reset to none
-    chrome.tabs.ungroup([currentTab.id]).catch(() => {});
-  }
-
-  showStatus("Applied ✓");
+  chrome.tabs.sendMessage(currentTab.id, {
+    type: "apply",
+    name: name || null,
+    color: selectedColor || null
+  }).then(() => {
+    showStatus("Applied ✓");
+  }).catch(() => {
+    // Content script not ready — inject and retry
+    chrome.scripting.executeScript({
+      target: { tabId: currentTab.id },
+      files: ["content_script.js"]
+    }).then(() => {
+      setTimeout(() => {
+        chrome.tabs.sendMessage(currentTab.id, {
+          type: "apply",
+          name: name || null,
+          color: selectedColor || null
+        }).catch(() => {});
+      }, 100);
+    }).catch(() => {});
+    showStatus("Applied ✓");
+  });
 });
 
 // Reset
@@ -103,14 +107,14 @@ btnReset.addEventListener("click", () => {
   if (!currentTab) return;
   chrome.storage.local.remove(String(currentTab.id));
   chrome.tabs.sendMessage(currentTab.id, { type: "reset" }).catch(() => {});
-  chrome.tabs.ungroup([currentTab.id]).catch(() => {});
 
   selectedColor = null;
   headerDot.style.background = "#fff";
   document.querySelectorAll(".color-swatch").forEach(s => s.classList.remove("selected"));
   colorPicker.firstChild?.classList.add("selected");
+  nameInput.value = currentTab.title || "";
 
-  showStatus("Reset to original");
+  showStatus("Reset ✓");
 });
 
 nameInput.addEventListener("keydown", (e) => {

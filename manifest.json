@@ -1,8 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab Namer",
-  "version": "3.0",
-  "description": "Rename tabs and assign colors from the extension popup.",
+  "version": "4.0",
   "permissions": ["tabs", "storage", "scripting"],
   "action": {
     "default_popup": "popup.html"

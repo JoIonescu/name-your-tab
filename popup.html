@@ -4,169 +4,66 @@
   <meta charset="utf-8" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
-      width: 280px;
+      width: 260px;
       background: #111;
       color: #f0f0f0;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: system-ui, sans-serif;
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
-
-    .header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #222;
+    .host { font-size: 11px; color: #555; margin-top: 2px; }
+    .label {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: #555; margin-bottom: 6px;
     }
-
-    .header .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #fff;
-      flex-shrink: 0;
-    }
-
-    .header h1 {
-      font-size: 13px;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: 0.02em;
-    }
-
-    .hostname {
-      font-size: 11px;
-      color: #555;
-      margin-top: 1px;
-    }
-
-    .section-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #555;
-      margin-bottom: 6px;
-    }
-
-    .section {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
     input[type="text"] {
-      width: 100%;
-      background: #1e1e1e;
-      border: 1px solid #2e2e2e;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 13px;
-      padding: 8px 10px;
-      outline: none;
-      transition: border-color 0.15s;
+      width: 100%; background: #1e1e1e;
+      border: 1px solid #2e2e2e; border-radius: 6px;
+      color: #fff; font-size: 13px; padding: 8px 10px; outline: none;
     }
-
-    input[type="text"]:focus {
-      border-color: #555;
+    input:focus { border-color: #555; }
+    .colors { display: flex; gap: 8px; flex-wrap: wrap; }
+    .swatch {
+      width: 26px; height: 26px; border-radius: 50%;
+      cursor: pointer; border: 2px solid transparent;
+      transition: transform 0.1s;
     }
-
-    .colors {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .color-swatch {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: transform 0.1s, border-color 0.1s;
-      flex-shrink: 0;
-    }
-
-    .color-swatch:hover {
-      transform: scale(1.15);
-    }
-
-    .color-swatch.selected {
-      border-color: #fff;
-    }
-
-    .actions {
-      display: flex;
-      gap: 8px;
-    }
-
+    .swatch:hover { transform: scale(1.2); }
+    .swatch.selected { border-color: #fff; }
+    .row { display: flex; gap: 8px; }
     button {
-      flex: 1;
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: none;
-      font-size: 12px;
-      font-weight: 600;
+      flex: 1; padding: 8px; border-radius: 6px;
+      border: none; font-size: 12px; font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s;
     }
-
-    button:hover { opacity: 0.85; }
-
-    .btn-apply {
-      background: #fff;
-      color: #111;
-    }
-
-    .btn-reset {
-      background: #1e1e1e;
-      color: #777;
-      border: 1px solid #2e2e2e;
-      flex: 0 0 auto;
-      padding: 8px 12px;
-    }
-
-    .status {
-      font-size: 11px;
-      color: #555;
-      text-align: center;
-      min-height: 14px;
-    }
-
-    .status.success { color: #6fcf97; }
+    .btn-apply { background: #fff; color: #111; }
+    .btn-reset { background: #222; color: #777; border: 1px solid #333; }
+    .status { font-size: 11px; color: #555; text-align: center; min-height: 14px; }
+    .status.ok { color: #6fcf97; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="dot" id="header-dot"></div>
-    <div>
-      <h1>Tab Namer</h1>
-      <div class="hostname" id="hostname">—</div>
-    </div>
+  <div>
+    <strong style="font-size:13px">Tab Namer</strong>
+    <div class="host" id="host">—</div>
   </div>
-
-  <div class="section">
-    <div class="section-label">Tab name</div>
-    <input type="text" id="tab-name" placeholder="Enter a name…" />
+  <div>
+    <div class="label">Tab name</div>
+    <input type="text" id="name-input" placeholder="Enter a name…" />
   </div>
-
-  <div class="section">
-    <div class="section-label">Tab color</div>
-    <div class="colors" id="color-picker"></div>
+  <div>
+    <div class="label">Favicon color</div>
+    <div class="colors" id="colors"></div>
   </div>
-
-  <div class="actions">
+  <div class="row">
     <button class="btn-reset" id="btn-reset">Reset</button>
     <button class="btn-apply" id="btn-apply">Apply</button>
   </div>
-
   <div class="status" id="status"></div>
-
   <script src="popup.js"></script>
 </body>
 </html>

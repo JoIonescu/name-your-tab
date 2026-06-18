@@ -20,7 +20,6 @@ const btnReset = document.getElementById("btn-reset");
 const statusEl = document.getElementById("status");
 const hostEl = document.getElementById("host");
 
-// Build swatches
 COLORS.forEach(({ label, hex }) => {
   const s = document.createElement("div");
   s.className = "swatch";
@@ -35,49 +34,14 @@ COLORS.forEach(({ label, hex }) => {
   colorsEl.appendChild(s);
 });
 
-function setFaviconInTab(tabId, hex) {
+function execInTab(tabId, func, args) {
   return chrome.scripting.executeScript({
     target: { tabId },
-    func: (color) => {
-      document.querySelectorAll("link[data-tab-namer]").forEach(e => e.remove());
-      if (!color) return;
-      const canvas = document.createElement("canvas");
-      canvas.width = 32; canvas.height = 32;
-      const ctx = canvas.getContext("2d");
-      ctx.beginPath();
-      ctx.arc(16, 16, 14, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-      const link = document.createElement("link");
-      link.rel = "icon";
-      link.href = canvas.toDataURL();
-      link.setAttribute("data-tab-namer", "true");
-      document.head.appendChild(link);
-    },
-    args: [hex]
+    func,
+    args: args || []
   });
 }
 
-function setTitleInTab(tabId, name) {
-  return chrome.scripting.executeScript({
-    target: { tabId },
-    func: (n) => { if (n) document.title = n; },
-    args: [name]
-  });
-}
-
-function resetInTab(tabId) {
-  return chrome.scripting.executeScript({
-    target: { tabId },
-    func: () => {
-      document.querySelectorAll("link[data-tab-namer]").forEach(e => e.remove());
-      const orig = sessionStorage.getItem("_tab_namer_orig");
-      if (orig) document.title = orig;
-    }
-  });
-}
-
-// Init
 chrome.tabs.query({ active: true, currentWindow: true }, ([t]) => {
   tab = t;
   try { hostEl.textContent = new URL(t.url).hostname; } catch { hostEl.textContent = t.url; }
@@ -97,12 +61,12 @@ chrome.tabs.query({ active: true, currentWindow: true }, ([t]) => {
 btnApply.addEventListener("click", async () => {
   if (!tab) return;
   const name = nameInput.value.trim();
-
   chrome.storage.local.set({ [String(tab.id)]: { name, color: selectedColor } });
 
   try {
-    await setTitleInTab(tab.id, name);
-    await setFaviconInTab(tab.id, selectedColor);
+    await execInTab(tab.id, (name, color) => {
+      window.dispatchEvent(new CustomEvent("_tab_namer_apply", { detail: { name, color } }));
+    }, [name, selectedColor]);
     setStatus("Applied ✓");
   } catch (e) {
     setStatus("Error: " + e.message);
@@ -117,7 +81,9 @@ btnReset.addEventListener("click", async () => {
   colorsEl.firstChild?.classList.add("selected");
 
   try {
-    await resetInTab(tab.id);
+    await execInTab(tab.id, () => {
+      window.dispatchEvent(new CustomEvent("_tab_namer_reset"));
+    });
     nameInput.value = tab.title;
     setStatus("Reset ✓");
   } catch (e) {

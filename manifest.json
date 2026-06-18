@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab Namer",
-  "version": "4.0",
+  "version": "5.0",
   "permissions": ["tabs", "storage", "scripting"],
   "action": {
     "default_popup": "popup.html"

@@ -12,7 +12,6 @@ const COLORS = [
 
 let tab = null;
 let selectedColor = null;
-let originalTitle = null;
 
 const nameInput = document.getElementById("name-input");
 const colorsEl = document.getElementById("colors");
@@ -21,6 +20,7 @@ const btnReset = document.getElementById("btn-reset");
 const statusEl = document.getElementById("status");
 const hostEl = document.getElementById("host");
 
+// Build swatches
 COLORS.forEach(({ label, hex }) => {
   const s = document.createElement("div");
   s.className = "swatch";
@@ -35,13 +35,55 @@ COLORS.forEach(({ label, hex }) => {
   colorsEl.appendChild(s);
 });
 
+function setFaviconInTab(tabId, hex) {
+  return chrome.scripting.executeScript({
+    target: { tabId },
+    func: (color) => {
+      document.querySelectorAll("link[data-tab-namer]").forEach(e => e.remove());
+      if (!color) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = 32; canvas.height = 32;
+      const ctx = canvas.getContext("2d");
+      ctx.beginPath();
+      ctx.arc(16, 16, 14, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      const link = document.createElement("link");
+      link.rel = "icon";
+      link.href = canvas.toDataURL();
+      link.setAttribute("data-tab-namer", "true");
+      document.head.appendChild(link);
+    },
+    args: [hex]
+  });
+}
+
+function setTitleInTab(tabId, name) {
+  return chrome.scripting.executeScript({
+    target: { tabId },
+    func: (n) => { if (n) document.title = n; },
+    args: [name]
+  });
+}
+
+function resetInTab(tabId) {
+  return chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      document.querySelectorAll("link[data-tab-namer]").forEach(e => e.remove());
+      const orig = sessionStorage.getItem("_tab_namer_orig");
+      if (orig) document.title = orig;
+    }
+  });
+}
+
+// Init
 chrome.tabs.query({ active: true, currentWindow: true }, ([t]) => {
   tab = t;
   try { hostEl.textContent = new URL(t.url).hostname; } catch { hostEl.textContent = t.url; }
 
-  chrome.storage.local.get([String(t.id), "_orig_" + t.url], (res) => {
+  chrome.storage.local.get(String(t.id), (res) => {
     const saved = res[String(t.id)];
-    originalTitle = res["_orig_" + t.url] || t.title;
     nameInput.value = saved?.name || t.title;
     selectedColor = saved?.color || null;
 
@@ -52,42 +94,35 @@ chrome.tabs.query({ active: true, currentWindow: true }, ([t]) => {
   });
 });
 
-btnApply.addEventListener("click", () => {
+btnApply.addEventListener("click", async () => {
   if (!tab) return;
   const name = nameInput.value.trim();
 
-  chrome.storage.local.get("_orig_" + tab.url, (res) => {
-    if (!res["_orig_" + tab.url]) {
-      chrome.storage.local.set({ ["_orig_" + tab.url]: tab.title });
-    }
-  });
-
   chrome.storage.local.set({ [String(tab.id)]: { name, color: selectedColor } });
 
-  chrome.tabs.sendMessage(tab.id, { type: "apply", name, color: selectedColor }, (res) => {
-    if (chrome.runtime.lastError) {
-      chrome.scripting.executeScript(
-        { target: { tabId: tab.id }, files: ["content_script.js"] },
-        () => {
-          setTimeout(() => {
-            chrome.tabs.sendMessage(tab.id, { type: "apply", name, color: selectedColor }, () => {});
-          }, 200);
-        }
-      );
-    }
+  try {
+    await setTitleInTab(tab.id, name);
+    await setFaviconInTab(tab.id, selectedColor);
     setStatus("Applied ✓");
-  });
+  } catch (e) {
+    setStatus("Error: " + e.message);
+  }
 });
 
-btnReset.addEventListener("click", () => {
+btnReset.addEventListener("click", async () => {
   if (!tab) return;
   chrome.storage.local.remove(String(tab.id));
-  chrome.tabs.sendMessage(tab.id, { type: "reset", originalTitle }, () => {});
   selectedColor = null;
-  nameInput.value = originalTitle || tab.title;
   document.querySelectorAll(".swatch").forEach(s => s.classList.remove("selected"));
   colorsEl.firstChild?.classList.add("selected");
-  setStatus("Reset ✓");
+
+  try {
+    await resetInTab(tab.id);
+    nameInput.value = tab.title;
+    setStatus("Reset ✓");
+  } catch (e) {
+    setStatus("Error: " + e.message);
+  }
 });
 
 nameInput.addEventListener("keydown", e => { if (e.key === "Enter") btnApply.click(); });

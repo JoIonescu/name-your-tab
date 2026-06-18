@@ -4,13 +4,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.color) setFavicon(request.color);
     else removeFavicon();
     sendResponse({ ok: true });
+    return false;
   }
   if (request.type === "reset") {
     if (request.originalTitle) document.title = request.originalTitle;
     removeFavicon();
     sendResponse({ ok: true });
+    return false;
   }
-  return true;
 });
 
 function setFavicon(hex) {
@@ -30,5 +31,4 @@ function setFavicon(hex) {
 }
 
 function removeFavicon() {
-  document.querySelectorAll("link[data-tab-namer]").forEach(e => e.remove());
-}
+  document.querySelectorAll("link

@@ -1,11 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "Tab Namer",
+  "name": "NameMyTab",
   "version": "5.1",
+  "description": "Rename any browser tab and give it a custom favicon color — directly from the toolbar.",
   "permissions": ["tabs", "storage", "scripting"],
   "host_permissions": ["<all_urls>"],
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
   },
   "background": {
     "service_worker": "service_worker.js"

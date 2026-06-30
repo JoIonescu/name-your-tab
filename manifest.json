@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "NameMyTab",
-  "version": "5.3",
+  "version": "5.4",
   "description": "Rename any browser tab and give it a custom favicon color — directly from the toolbar.",
   "permissions": ["tabs", "storage", "scripting", "activeTab"],
   "icons": {

@@ -1,7 +1,3 @@
-const GA_MEASUREMENT_ID = "G-FL5T8EXTWL";
-const GA_API_SECRET = "xhNMZgT_TuylyuJe0fzeqQ";
-const GA_ENDPOINT = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`;
-
 const COLORS = [
   { label: "None",   hex: null },
   { label: "Red",    hex: "#eb5757" },
@@ -24,28 +20,10 @@ const btnReset = document.getElementById("btn-reset");
 const statusEl = document.getElementById("status");
 const hostEl = document.getElementById("host");
 
-async function getClientId() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get("_ga_client_id", (res) => {
-      resolve(res._ga_client_id || "unknown");
-    });
-  });
+function track(name, params = {}) {
+  chrome.runtime.sendMessage({ type: "track", name, params }).catch(() => {});
 }
 
-async function sendEvent(name, params = {}) {
-  try {
-    const clientId = await getClientId();
-    await fetch(GA_ENDPOINT, {
-      method: "POST",
-      body: JSON.stringify({
-        client_id: clientId,
-        events: [{ name, params }]
-      })
-    });
-  } catch (e) {}
-}
-
-// Build swatches
 COLORS.forEach(({ label, hex }) => {
   const s = document.createElement("div");
   s.className = "swatch";
@@ -64,13 +42,11 @@ function execInTab(tabId, func, args) {
   return chrome.scripting.executeScript({ target: { tabId }, func, args: args || [] });
 }
 
-// Init
 chrome.tabs.query({ active: true, currentWindow: true }, ([t]) => {
   tab = t;
   try { hostEl.textContent = new URL(t.url).hostname; } catch { hostEl.textContent = t.url; }
 
-  // Track popup opened
-  sendEvent("popup_opened");
+  track("popup_opened");
 
   chrome.storage.local.get(String(t.id), (res) => {
     const saved = res[String(t.id)];
@@ -94,8 +70,7 @@ btnApply.addEventListener("click", async () => {
       window.dispatchEvent(new CustomEvent("_tab_namer_apply", { detail: { name, color } }));
     }, [name, selectedColor]);
 
-    // Track apply event
-    sendEvent("tab_renamed", { has_color: !!selectedColor });
+    track("tab_renamed", { has_color: !!selectedColor });
     setStatus("Applied ✓");
   } catch (e) {
     setStatus("Error: " + e.message);
@@ -114,8 +89,7 @@ btnReset.addEventListener("click", async () => {
       window.dispatchEvent(new CustomEvent("_tab_namer_reset"));
     });
 
-    // Track reset event
-    sendEvent("tab_reset");
+    track("tab_reset");
     nameInput.value = tab.title;
     setStatus("Reset ✓");
   } catch (e) {

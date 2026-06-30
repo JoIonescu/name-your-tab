@@ -1,8 +1,8 @@
-const GA_MEASUREMENT_ID = "G-FL5T8EXTWL";
-const GA_API_SECRET = "xhNMZgT_TuylyuJe0fzeqQ";
+// GA_MEASUREMENT_ID and GA_API_SECRET come from analytics_config.js (loaded via importScripts)
+importScripts("analytics_config.js");
+
 const GA_ENDPOINT = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`;
 
-// Get or create a persistent anonymous client ID
 async function getClientId() {
   return new Promise((resolve) => {
     chrome.storage.local.get("_ga_client_id", (res) => {
@@ -27,12 +27,9 @@ async function sendEvent(name, params = {}) {
         events: [{ name, params }]
       })
     });
-  } catch (e) {
-    // Silently fail — never interrupt the user
-  }
+  } catch (e) {}
 }
 
-// Track install
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     sendEvent("extension_installed");
@@ -41,12 +38,10 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 });
 
-// Track popup opened
 chrome.action.onClicked.addListener(() => {
   sendEvent("popup_opened");
 });
 
-// Reapply saved name/color when a tab finishes loading
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete") return;
   chrome.storage.local.get([String(tabId)], (res) => {
@@ -64,4 +59,11 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   chrome.storage.local.remove(String(tabId));
+});
+
+// Allow popup to request analytics events via messaging
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.type === "track") {
+    sendEvent(request.name, request.params || {});
+  }
 });

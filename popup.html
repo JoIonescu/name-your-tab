@@ -1,70 +1,132 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      width: 260px;
-      background: #111;
-      color: #f0f0f0;
-      font-family: system-ui, sans-serif;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .host { font-size: 11px; color: #555; margin-top: 2px; }
-    .label {
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      color: #555; margin-bottom: 6px;
-    }
-    input[type="text"] {
-      width: 100%; background: #1e1e1e;
-      border: 1px solid #2e2e2e; border-radius: 6px;
-      color: #fff; font-size: 13px; padding: 8px 10px; outline: none;
-    }
-    input:focus { border-color: #555; }
-    .colors { display: flex; gap: 8px; flex-wrap: wrap; }
-    .swatch {
-      width: 26px; height: 26px; border-radius: 50%;
-      cursor: pointer; border: 2px solid transparent;
-      transition: transform 0.1s;
-    }
-    .swatch:hover { transform: scale(1.2); }
-    .swatch.selected { border-color: #fff; }
-    .row { display: flex; gap: 8px; }
-    button {
-      flex: 1; padding: 8px; border-radius: 6px;
-      border: none; font-size: 12px; font-weight: 600;
-      cursor: pointer;
-    }
-    .btn-apply { background: #fff; color: #111; }
-    .btn-reset { background: #222; color: #777; border: 1px solid #333; }
-    .status { font-size: 11px; color: #555; text-align: center; min-height: 14px; }
-    .status.ok { color: #6fcf97; }
-  </style>
-</head>
-<body>
-  <div>
-    <strong style="font-size:13px">Tab Namer</strong>
-    <div class="host" id="host">—</div>
-  </div>
-  <div>
-    <div class="label">Tab name</div>
-    <input type="text" id="name-input" placeholder="Enter a name…" />
-  </div>
-  <div>
-    <div class="label">Favicon color</div>
-    <div class="colors" id="colors"></div>
-  </div>
-  <div class="row">
-    <button class="btn-reset" id="btn-reset">Reset</button>
-    <button class="btn-apply" id="btn-apply">Apply</button>
-  </div>
-  <div class="status" id="status"></div>
-  <div style="font-size:10px; color:#444; text-align:center; line-height:1.4;">Refresh the tab for changes<br>to take effect</div>
-  <script src="popup.js"></script>
-</body>
-</html>
+const GA_MEASUREMENT_ID = "G-FL5T8EXTWL";
+const GA_API_SECRET = "xhNMZgT_TuylyuJe0fzeqQ";
+const GA_ENDPOINT = `https://www.google-analytics.com/mp/collect?measurement_id=${GA_MEASUREMENT_ID}&api_secret=${GA_API_SECRET}`;
+
+const COLORS = [
+  { label: "None",   hex: null },
+  { label: "Red",    hex: "#eb5757" },
+  { label: "Orange", hex: "#f0a500" },
+  { label: "Yellow", hex: "#f5e642" },
+  { label: "Green",  hex: "#4caf7d" },
+  { label: "Cyan",   hex: "#56ccf2" },
+  { label: "Blue",   hex: "#2f80ed" },
+  { label: "Purple", hex: "#9b51e0" },
+  { label: "Pink",   hex: "#eb57a0" },
+];
+
+let tab = null;
+let selectedColor = null;
+
+const nameInput = document.getElementById("name-input");
+const colorsEl = document.getElementById("colors");
+const btnApply = document.getElementById("btn-apply");
+const btnReset = document.getElementById("btn-reset");
+const statusEl = document.getElementById("status");
+const hostEl = document.getElementById("host");
+
+async function getClientId() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("_ga_client_id", (res) => {
+      resolve(res._ga_client_id || "unknown");
+    });
+  });
+}
+
+async function sendEvent(name, params = {}) {
+  try {
+    const clientId = await getClientId();
+    await fetch(GA_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify({
+        client_id: clientId,
+        events: [{ name, params }]
+      })
+    });
+  } catch (e) {}
+}
+
+// Build swatches
+COLORS.forEach(({ label, hex }) => {
+  const s = document.createElement("div");
+  s.className = "swatch";
+  s.style.background = hex || "#333";
+  s.title = label;
+  s.dataset.hex = hex || "";
+  s.addEventListener("click", () => {
+    document.querySelectorAll(".swatch").forEach(x => x.classList.remove("selected"));
+    s.classList.add("selected");
+    selectedColor = hex;
+  });
+  colorsEl.appendChild(s);
+});
+
+function execInTab(tabId, func, args) {
+  return chrome.scripting.executeScript({ target: { tabId }, func, args: args || [] });
+}
+
+// Init
+chrome.tabs.query({ active: true, currentWindow: true }, ([t]) => {
+  tab = t;
+  try { hostEl.textContent = new URL(t.url).hostname; } catch { hostEl.textContent = t.url; }
+
+  // Track popup opened
+  sendEvent("popup_opened");
+
+  chrome.storage.local.get(String(t.id), (res) => {
+    const saved = res[String(t.id)];
+    nameInput.value = saved?.name || t.title;
+    selectedColor = saved?.color || null;
+
+    const match = [...document.querySelectorAll(".swatch")]
+      .find(s => s.dataset.hex === (selectedColor || ""));
+    if (match) match.classList.add("selected");
+    else colorsEl.firstChild?.classList.add("selected");
+  });
+});
+
+btnApply.addEventListener("click", async () => {
+  if (!tab) return;
+  const name = nameInput.value.trim();
+  chrome.storage.local.set({ [String(tab.id)]: { name, color: selectedColor } });
+
+  try {
+    await execInTab(tab.id, (name, color) => {
+      window.dispatchEvent(new CustomEvent("_tab_namer_apply", { detail: { name, color } }));
+    }, [name, selectedColor]);
+
+    // Track apply event
+    sendEvent("tab_renamed", { has_color: !!selectedColor });
+    setStatus("Applied ✓");
+  } catch (e) {
+    setStatus("Error: " + e.message);
+  }
+});
+
+btnReset.addEventListener("click", async () => {
+  if (!tab) return;
+  chrome.storage.local.remove(String(tab.id));
+  selectedColor = null;
+  document.querySelectorAll(".swatch").forEach(s => s.classList.remove("selected"));
+  colorsEl.firstChild?.classList.add("selected");
+
+  try {
+    await execInTab(tab.id, () => {
+      window.dispatchEvent(new CustomEvent("_tab_namer_reset"));
+    });
+
+    // Track reset event
+    sendEvent("tab_reset");
+    nameInput.value = tab.title;
+    setStatus("Reset ✓");
+  } catch (e) {
+    setStatus("Error: " + e.message);
+  }
+});
+
+nameInput.addEventListener("keydown", e => { if (e.key === "Enter") btnApply.click(); });
+
+function setStatus(msg) {
+  statusEl.textContent = msg;
+  statusEl.className = "status ok";
+  setTimeout(() => { statusEl.textContent = ""; statusEl.className = "status"; }, 2000);
+}

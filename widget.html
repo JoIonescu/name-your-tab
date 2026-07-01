@@ -1,0 +1,184 @@
+<!-- NameMyTab Floating Widget -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body, html { background: transparent; overflow: hidden; }
+  :root {
+    --bg: #111;
+    --panel: #181818;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --dim: #777;
+    --accent: #019B8F;
+  }
+
+  #launcher {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: 999px 0 0 999px;
+    padding: 14px 20px 14px 16px;
+    cursor: pointer;
+    color: var(--text);
+    box-shadow: -6px 0 20px rgba(0,0,0,0.4), 0 0 0 0 rgba(1,155,143,0.4);
+    animation: rise 0.5s cubic-bezier(0.22,1,0.36,1) both, pulse 2.8s ease-in-out 1s infinite;
+    transition: border-color 0.2s, padding 0.2s;
+  }
+  #launcher:hover {
+    border-color: var(--accent);
+    padding-right: 26px;
+    animation: none;
+    box-shadow: -8px 0 28px rgba(1,155,143,0.25);
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(-50%) translateX(80px); }
+    to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: -6px 0 20px rgba(0,0,0,0.4), 0 0 0 0 rgba(1,155,143,0.4); }
+    50%     { box-shadow: -6px 0 20px rgba(0,0,0,0.4), 0 0 0 8px rgba(1,155,143,0); }
+  }
+  .dot-ring {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    background: conic-gradient(
+      #eb5757 0deg 45deg, #f0a500 45deg 90deg, #f5e642 90deg 135deg,
+      #4caf7d 135deg 180deg, #56ccf2 180deg 225deg, #2f80ed 225deg 270deg,
+      #9b51e0 270deg 315deg, #eb57a0 315deg 360deg
+    );
+    animation: spin 6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .l-main { display: block; font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .l-sub  { display: block; font-size: 10.5px; font-weight: 500; color: var(--accent); margin-top: 2px; white-space: nowrap; }
+
+  #overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #overlay.open { display: flex; }
+
+  #panel {
+    position: relative;
+    width: 600px;
+    max-width: calc(100vw - 48px);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+  #overlay.open #panel { opacity: 1; transform: scale(1) translateY(0); }
+
+  #close {
+    position: absolute; top: 14px; right: 14px;
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--dim); cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #close:hover { color: var(--text); border-color: #555; }
+
+  /* Left — small, name + swatches only */
+  .col-left { flex: 0 0 120px; }
+  .col-left h2 {
+    font-size: 20px; font-weight: 800;
+    letter-spacing: -0.02em; line-height: 1.2;
+    color: var(--text); margin-bottom: 12px;
+  }
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; max-width: 100px; }
+  .swatches span { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+
+  /* Right — bigger */
+  .col-right {
+    flex: 1;
+    display: flex; flex-direction: column; gap: 12px;
+    border-left: 1px solid var(--border);
+    padding-left: 28px;
+  }
+  .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
+  .features { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .features li { font-size: 13px; color: #bbb; display: flex; align-items: center; gap: 8px; }
+  .features li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  #cta {
+    display: block; width: 100%;
+    background: #fff; color: #111;
+    border: none; border-radius: 10px;
+    padding: 14px 10px;
+    font-size: 13px; font-weight: 800;
+    text-decoration: none;
+    text-align: center;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  #cta:hover { opacity: 0.85; transform: scale(1.02); }
+  .meta { text-align: center; font-size: 10px; color: #444; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #launcher, .dot-ring { animation: none !important; }
+  }
+</style>
+
+<button id="launcher" onclick="document.getElementById('overlay').classList.add('open')">
+  <span class="dot-ring"></span>
+  <span>
+    <span class="l-main">Download the Chrome extension</span>
+    <span class="l-sub">Find out more →</span>
+  </span>
+</button>
+
+<div id="overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div id="panel">
+    <button id="close" onclick="document.getElementById('overlay').classList.remove('open')">✕</button>
+
+    <div class="col-left">
+      <h2>NameMyTab</h2>
+      <div class="swatches">
+        <span style="background:#eb5757"></span>
+        <span style="background:#f0a500"></span>
+        <span style="background:#f5e642"></span>
+        <span style="background:#4caf7d"></span>
+        <span style="background:#56ccf2"></span>
+        <span style="background:#2f80ed"></span>
+        <span style="background:#9b51e0"></span>
+        <span style="background:#eb57a0"></span>
+      </div>
+    </div>
+
+    <div class="col-right">
+      <div class="badge">Free Chrome Extension</div>
+      <ul class="features">
+        <li>Rename any tab instantly</li>
+        <li>Color-coded favicons</li>
+        <li>Zero data collected</li>
+        <li>Works on every site</li>
+      </ul>
+      <a id="cta"
+        href="https://chromewebstore.google.com/detail/epkphcpjlejdkoacdheecjpompebkjke?utm_source=item-share-cb"
+        target="_blank"
+        rel="noopener noreferrer"
+        onclick="event.stopPropagation()">
+        Download from Chrome Store
+      </a>
+      <div class="meta">Free forever · No sign-up</div>
+    </div>
+  </div>
+</div>
